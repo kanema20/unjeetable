@@ -1,12 +1,16 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../contracts/YourContract.sol";
+import "../contracts/MIRAI.sol";
+import "../contracts/ERC6551Registry.sol";
 import "./DeployHelpers.s.sol";
 
-contract DeployScript is ScaffoldETHDeploy {
+contract ERC6551Deploy is ScaffoldETHDeploy {
     error InvalidPrivateKey(string);
-
+    address registryAddress = 0x000000006551c19487814612e58FE06813775758;
+    address implementation = 0x41C8f39463A868d3A88af00cd0fe7102F30E44eC;
+    uint256 goerliChainId = 5;
+    ERC6551Registry mirai6551;
     function run() external {
         uint256 deployerPrivateKey = setupLocalhostEnv();
         if (deployerPrivateKey == 0) {
@@ -15,15 +19,21 @@ contract DeployScript is ScaffoldETHDeploy {
             );
         }
         vm.startBroadcast(deployerPrivateKey);
-        YourContract yourContract = new YourContract(
-            vm.addr(deployerPrivateKey)
-        );
+
+        mirai6551 = ERC6551Registry(registryAddress);
+
+        MIRAI mirai = new MIRAI();
+
+        mirai.safeMint(vm.envAddress("DEPLOYER_PUBLIC_KEY"));
         console.logString(
             string.concat(
-                "YourContract deployed at: ",
-                vm.toString(address(yourContract))
+                "NFTBotAccount deployed at: ",
+                vm.toString(address(mirai))
             )
         );
+
+        mirai6551.createAccount(implementation, 0, goerliChainId, address(mirai), 0);
+
         vm.stopBroadcast();
 
         /**
